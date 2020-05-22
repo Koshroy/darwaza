@@ -2,7 +2,7 @@ package require uri
 package require tls
 
 namespace eval ::gemini {
-    namespace export fetch linetype
+    namespace export fetch linetype headerlevel
 }
 
 uri::register gemini {
@@ -109,5 +109,18 @@ proc ::gemini::linetype {line} {
         return raw
     } else {
         return text
+    }
+}
+
+proc ::gemini::headerlevel {line} {
+    set len [string length $line]
+    if {$len >= 3 && [string range $line 0 2] eq "###"} {
+        return h3
+    } elseif {$len >= 2 && [string range $line 0 1] eq "##"} {
+        return h2
+    } elseif {$len >= 1 && [string index $line 0] eq "#"} {
+        return h1
+    } else {
+        return none
     }
 }

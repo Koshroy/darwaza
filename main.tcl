@@ -1,4 +1,5 @@
 package require Tk
+package require lambda
 
 source "gemini.tcl"
 
@@ -25,18 +26,59 @@ set fwd_btn [ttk::button .r1.forward -text ▶ -width 3]
 set address_bar [ttk::entry .r1.address -textvariable browser_url]
 set go_btn [ttk::button .r1.go -text "Go!" -command change_url]
 
-set regular_font [font create "view_regular" -family "Georgia" -size 22]
+set regular_font_family "Georgia"
+set regular_font [font create "view_regular" -family $regular_font_family -size 22]
+set mono_font [font create "view_mono" -family "Courier" -size 22]
+set h1_font [font create "view_h1" -family $regular_font_family -size 42]
+set h2_font [font create "view_h2" -family $regular_font_family -size 38]
+set h3_font [font create "view_h3" -family $regular_font_family -size 32]
 set viewport [text .r2.viewport]
 set statusbar [ttk::label .r3.statusbar -justify right -text\
                    "Welcome to Darwaza!"]
 
+ 
+$viewport configure \
+    -font $regular_font \
+    -bg "#fff8dc"\
+    -foreground black\
+    -padx 20 -pady 20\
+    -insertontime 0
 
-$viewport configure -font $regular_font
+
+$viewport tag configure h1 -font $h1_font
+$viewport tag configure h2 -font $h2_font
+$viewport tag configure h3 -font $h3_font
 
 proc change_url {} {
-    array set resp [gemini::fetch $::browser_url]
     $::viewport delete 1.0 [$::viewport index end]
-    $::viewport insert 1.0 $resp(body)
+    gemini::fetch $::browser_url -linehandler [
+        lambda {line} {
+            set linetype [gemini::linetype $line]
+            set render_line [
+                           switch $linetype {
+                               markdown {
+                                   regsub {^#+[[:space:]]*} $line ""
+                               }
+                               default {
+                                   string cat $line
+                               }
+                           }
+                          ]
+            set insert_line [string cat $render_line "\n"]
+            set insert_tag [ switch $linetype {
+                markdown {
+                    ::gemini::headerlevel $line
+                }
+                default {
+                    string cat ""
+                }
+            }]
+            $::viewport insert end\
+                [string cat $render_line "\n"]\
+                $insert_tag
+        }
+       ]
+    lappend loc_hist $::browser_url
 }
 
 

@@ -9,7 +9,7 @@ uri::register gemini {
     variable schemepart $uri::http::schemepart
 }
 
-# uri::Split<Scheme> is the proc called when trying to
+# uri::Split<Scheme> is the command called when trying to
 # call uri::split on a uri.
 # This will be called when we call uri::fetch [gemini://cool.website]
 proc uri::SplitGemini {url} {
@@ -37,7 +37,7 @@ proc uri::SplitGemini {url} {
     return [array get split_url]
 }
 
-proc mime_type {header} {
+proc ::gemini::mime_type {header} {
     set code_len 2
     set mime_start_ind [expr $code_len + 1]
     set mime_end_ind [expr [string first ";" $header $mime_start_ind] - 1]
@@ -54,21 +54,21 @@ proc mime_type {header} {
 proc ::gemini::fetch {url} {
     array set url_split [uri::split $url]
     set sock [tls::socket $url_split(host) $url_split(port)]
-    chan puts -nonewline $sock [string cat $url "\r\n"]
-    chan flush $sock
+    puts -nonewline $sock [string cat $url "\r\n"]
+    flush $sock
 
     gets $sock header ;# Grab the header line from the socket
     set code [string range $header 0 1]
-    if {[string index $code 0] eq 5} {
-        error "Error fetching Resource: $header"
-    }
-
     set body [chan read $sock]
     close $sock
 
+    if {[string index $code 0] eq 5} {
+        error "Error fetching Resource: $body"
+    }
+
 
     set resp(code) $code
-    set resp(mime-type) [mime_type $header]
+    set resp(mime_type) [mime_type $header]
     set resp(body) $body
     
     return [array get resp]

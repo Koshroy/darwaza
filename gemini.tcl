@@ -2,7 +2,7 @@ package require uri
 package require tls
 
 namespace eval ::gemini {
-    namespace export fetch
+    namespace export fetch linetype
 }
 
 uri::register gemini {
@@ -41,10 +41,10 @@ proc ::gemini::mime_type {header} {
     set code_len 2
     set mime_start_ind [expr $code_len + 1]
     set mime_end_ind [expr [string first ";" $header $mime_start_ind] - 1]
-    ;# If we know that the mime type has to at least start at the end of
-    ;# the status code, and that there is no way that we found the
-    ;# mimetype, so we are in error.
-    ;# This is a more restrictive check than $mime_end_ind < 0
+    # If we know that the mime type has to at least start at the end of
+    # the status code, and that there is no way that we found the
+    # mimetype, so we are in error.
+    # This is a more restrictive check than $mime_end_ind < 0
     if { $mime_end_ind < $code_len} {
         return ""
     }
@@ -78,7 +78,11 @@ proc ::gemini::fetch {url args} {
         if $has_linehandler {
             eval [list {*}$linehandler $line]
         } else {
-            set body [string cat $body $line]
+            # gets strips trailing newlines from the line
+            # so if we want to concatenate lines into a body
+            # string and return that, then we should put the
+            # newlines back in. Gemini uses CR-LF.
+            set body [string cat $body $line "\r\n"]
         }
     }
 
@@ -93,5 +97,17 @@ proc ::gemini::fetch {url args} {
     set resp(mime_type) [mime_type $header]
     set resp(body) $body
 
-    return $resp
+    return [array get resp]
+}
+
+proc ::gemini::linetype {line} {
+    if {[regexp "^#+\s*" $line]} {
+        return markdown
+    } elseif {[regexp "^=>\s*" $line]} {
+        return link
+    } elseif {[regexp "^```" $line]} {
+        return raw
+    } else {
+        return text
+    }
 }

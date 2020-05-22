@@ -51,7 +51,15 @@ proc ::gemini::mime_type {header} {
     return [string range $header $mime_start_ind $mime_end_ind]
 }
 
-proc ::gemini::fetch {url} {
+proc ::gemini::fetch {url args} {
+    # TODO: Use Getopt
+    foreach {opt val} $args {
+        if {$opt == {-linehandler}} {
+            set linehandler $val
+        }
+    }
+
+    set has_linehandler [info exists linehandler]
     array set url_split [uri::split $url]
     set sock [tls::socket $url_split(host) $url_split(port)]
     puts -nonewline $sock [string cat $url "\r\n"]
@@ -59,17 +67,31 @@ proc ::gemini::fetch {url} {
 
     gets $sock header ;# Grab the header line from the socket
     set code [string range $header 0 1]
-    set body [chan read $sock]
-    close $sock
 
-    if {[string index $code 0] eq 5} {
+    if {[expr [string index $code 0] eq 5]} {
         error "Error fetching Resource: $body"
     }
 
+    set body ""
+
+    while {[gets $sock line] >= 0} {
+        if $has_linehandler {
+            eval [list {*}$linehandler $line]
+        } else {
+            set body [string cat $body $line]
+        }
+    }
+
+    # If we have a linehandler, then there is no need to
+    # return a response, so let's clean up and return early
+    if $has_linehandler {
+        close $sock
+        return
+    }
 
     set resp(code) $code
     set resp(mime_type) [mime_type $header]
     set resp(body) $body
-    
-    return [array get resp]
+
+    return $resp
 }

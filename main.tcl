@@ -51,9 +51,12 @@ $viewport tag configure link -font $link_font -foreground "#3333cc"
 render::setviewport $viewport
 
 proc change_url {} {
-    $::viewport delete 1.0 [$::viewport index end]
-    gemini::fetch $::browser_url -linehandler $render::render_proc
-    lappend loc_hist $::browser_url
+    variable viewport
+    variable browser_url
+    
+    $viewport delete 1.0 [$viewport index end]
+    gemini::fetch $browser_url -linehandler $render::render_proc
+    lappend loc_hist $browser_url
 }
 
 

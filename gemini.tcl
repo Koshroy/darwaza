@@ -79,7 +79,7 @@ proc ::gemini::fetch {url args} {
 
     while {[gets $sock line] >= 0} {
         if $has_linehandler {
-            eval [list {*}$linehandler $line]
+            eval $linehandler [list $line]
         } else {
             # gets strips trailing newlines from the line
             # so if we want to concatenate lines into a body

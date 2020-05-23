@@ -3,6 +3,7 @@ package require tls
 
 namespace eval ::gemini {
     namespace export fetch linetype headerlevel
+    namespace export stripMarkdown
 }
 
 uri::register gemini {
@@ -123,4 +124,13 @@ proc ::gemini::headerlevel {line} {
     } else {
         return none
     }
+}
+
+proc ::gemini::stripMarkdown {str} {
+    return [regsub {^#+[[:space:]]*} $str ""]
+}
+
+proc ::gemini::splitLink {link} {
+    set match [regexp {=>\s+(\S+)\s+(\S.*)} $link full url text]
+    return [list {url} $url {text} $text]
 }

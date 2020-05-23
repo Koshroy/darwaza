@@ -49,35 +49,35 @@ $viewport tag configure h1 -font $h1_font
 $viewport tag configure h2 -font $h2_font
 $viewport tag configure h3 -font $h3_font
 
+# TODO: move render and context into their own namespace
+array set context {}
+proc render {line} {
+    set linetype [gemini::linetype $line]
+    set render_line [switch $linetype {
+        markdown {
+            regsub {^#+[[:space:]]*} $line ""
+        }
+        default {
+            string cat $line
+        }
+    }]
+    set insert_line [string cat $render_line "\n"]
+    set insert_tag [switch $linetype {
+        markdown {
+            ::gemini::headerlevel $line
+        }
+        default {
+            string cat ""
+        }
+    }]
+    $::viewport insert end [string cat $render_line "\n"] $insert_tag
+}
+
+set render_proc {render}
+
 proc change_url {} {
     $::viewport delete 1.0 [$::viewport index end]
-    gemini::fetch $::browser_url -linehandler [
-        lambda {line} {
-            set linetype [gemini::linetype $line]
-            set render_line [
-                           switch $linetype {
-                               markdown {
-                                   regsub {^#+[[:space:]]*} $line ""
-                               }
-                               default {
-                                   string cat $line
-                               }
-                           }
-                          ]
-            set insert_line [string cat $render_line "\n"]
-            set insert_tag [ switch $linetype {
-                markdown {
-                    ::gemini::headerlevel $line
-                }
-                default {
-                    string cat ""
-                }
-            }]
-            $::viewport insert end\
-                [string cat $render_line "\n"]\
-                $insert_tag
-        }
-       ]
+    gemini::fetch $::browser_url -linehandler $::render_proc
     lappend loc_hist $::browser_url
 }
 

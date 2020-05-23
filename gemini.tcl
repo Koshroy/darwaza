@@ -6,6 +6,8 @@ namespace eval ::gemini {
     namespace export stripMarkdown
 }
 
+# TODO: If this file is imported twice, we should not be
+# trying to register this twice
 uri::register gemini {
     variable schemepart $uri::http::schemepart
 }

@@ -2,6 +2,7 @@ package require Tk
 package require lambda
 
 source "gemini.tcl"
+source "render.tcl"
 
 # History list
 set loc_hist [list]
@@ -26,22 +27,6 @@ set fwd_btn [ttk::button .r1.forward -text ▶ -width 3]
 set address_bar [ttk::entry .r1.address -textvariable browser_url]
 set go_btn [ttk::button .r1.go -text "Go!" -command change_url]
 
-set regular_font_family "Georgia"
-set regular_font_size 22
-set regular_font [font create "view_regular" -family $regular_font_family -size $regular_font_size]
-set mono_font [font create "view_mono" -family "Courier" -size 22]
-
-set h1_font [font create "view_h1" -family $regular_font_family -size 42]
-set h2_font [font create "view_h2" -family $regular_font_family -size 38]
-set h3_font [font create "view_h3" -family $regular_font_family -size 32]
-
-set link_font [font create "view_link"\
-                   -family $regular_font_family\
-                   -size $regular_font_size]
-
-set spacer_font [font create "view_spacer"\
-                     -family $regular_font_family -size 10]
-
 set viewport [text .r2.viewport]
 set statusbar [ttk::label .r3.statusbar -justify right -text\
                    "Welcome to Darwaza!"]
@@ -63,47 +48,11 @@ $viewport tag configure spacer -font $spacer_font
 
 $viewport tag configure link -font $link_font -foreground "#3333cc"
 
-# TODO: move render and context into their own namespace
-array set context {}
-
-array set render_linetype_funcs \
-    [list markdown ::renderMarkdown\
-         text ::renderText\
-         link ::renderLink\
-         raw ::renderText ]
-
-proc renderMarkdown {line viewport context} {
-    set post [gemini::stripMarkdown $line]
-    $viewport insert end\
-        [string cat [gemini::stripMarkdown $line] "\n"]\
-        [list [gemini::headerlevel $line] -spacing3 $regular_font_size]
-}
-
-proc renderLink {line viewport context} {
-    array set link_split [gemini::splitLink $line]
-    $viewport insert end [string cat $link_split(text) "\n"] link
-}
-
-proc renderText {line viewport context} {
-    $viewport insert end [string cat $line "\n"]
-}
-
-proc render_line {linetype line viewport context} {
-    $::render_linetype_funcs($linetype) $line $viewport $context
-}
-
-set render_line_proc {render_line}
-proc render {line} {
-    set linetype [gemini::linetype $line]
-    $::render_line_proc $linetype $line $::viewport ::context
-}
-
-
-set render_proc {render}
+render::setviewport $viewport
 
 proc change_url {} {
     $::viewport delete 1.0 [$::viewport index end]
-    gemini::fetch $::browser_url -linehandler $::render_proc
+    gemini::fetch $::browser_url -linehandler $render::render_proc
     lappend loc_hist $::browser_url
 }
 

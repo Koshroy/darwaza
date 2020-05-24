@@ -44,9 +44,8 @@ $viewport tag configure h1 -font $h1_font
 $viewport tag configure h2 -font $h2_font
 $viewport tag configure h3 -font $h3_font
 
-$viewport tag configure spacer -font $spacer_font
-
 $viewport tag configure link -font $link_font -foreground "#3333cc"
+$viewport tag bind link {<Button-1>} {render::linkhandler %x %y}
 
 render::setviewport $viewport
 

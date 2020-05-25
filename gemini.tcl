@@ -2,14 +2,14 @@ package require uri
 package require tls
 
 namespace eval ::gemini {
-    namespace export fetch linetype headerlevel
+    namespace export fetch linetype headerlevel resolve
     namespace export stripMarkdown
 }
 
 # TODO: If this file is imported twice, we should not be
 # trying to register this twice
 uri::register gemini {
-    variable schemepart $uri::http::schemepart
+    variable schemepart gemini
 }
 
 # uri::Split<Scheme> is the command called when trying to
@@ -38,6 +38,10 @@ proc uri::SplitGemini {url} {
     }
 
     return [array get split_url]
+}
+
+proc ::uri::JoinGemini {args} {
+    return [eval [linsert $args 0 uri::JoinHttpInner gemini 1965]]
 }
 
 proc ::gemini::mime_type {header} {
@@ -72,7 +76,7 @@ proc ::gemini::fetch {url args} {
     set code [string range $header 0 1]
 
     if {[expr [string index $code 0] eq 5]} {
-        error "Error fetching Resource: $body"
+        error "Error fetching Resource: $url with code $code"
     }
 
     set body ""
@@ -133,6 +137,13 @@ proc ::gemini::stripMarkdown {str} {
 }
 
 proc ::gemini::splitLink {link} {
-    set match [regexp {=>\s+(\S+)\s+(\S.*)} $link full url text]
+    set match [regexp {=>\s+(\S+)(\s+\S.*)?} $link full raw_url text]
+    set url [string trimleft $raw_url]
     return [list {url} $url {text} $text]
+}
+
+proc ::gemini::resolve {base url} {
+    set sub_base [string map {gemini:// http://} $base]
+    set resolve_http [uri::resolve $sub_base $url]
+    return [string map {http:// gemini://} $resolve_http]
 }

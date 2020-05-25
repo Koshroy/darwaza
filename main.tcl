@@ -47,16 +47,31 @@ $viewport tag configure h3 -font $h3_font
 $viewport tag configure link -font $link_font -foreground "#3333cc"
 $viewport tag bind link {<Button-1>} {render::linkhandler %x %y}
 
-render::setviewport $viewport
 
-proc change_url {} {
+proc change_url {args} {
     variable viewport
     variable browser_url
-    
+
+    if {[llength $args] == 1} {
+        # If the list is a singleton, then we can use it as-is
+        set browser_url $args
+
+        # TODO: Remove hack when moving to Tcl object
+        render::seturl $args
+    }
+
     $viewport delete 1.0 [$viewport index end]
+    render::cleanlinks
     gemini::fetch $browser_url -linehandler $render::render_proc
     lappend loc_hist $browser_url
 }
+
+
+# TODO: Refactor into an object constructor
+render::setviewport $viewport
+render::seturl $browser_url
+render::seturlhandler [namespace code change_url]
+# End TODO
 
 
 pack configure .r1 -fill x

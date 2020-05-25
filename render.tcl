@@ -38,12 +38,12 @@ namespace eval ::render {
     # such as maybe the Tcl object system, or passing along a
     # curried render function, but for now, this is the simplest
     # way to go.
-    variable viewport link_table
+    variable viewport link_table curr_url urlhandler
     set link_list {} ;# Empty list
 
     namespace export render_proc setviewport render_line_proc
     namespace export render_line
-    namespace export linkhandler
+    namespace export linkhandler seturlhandler
 
     array set render_linetype_funcs \
         [list markdown renderMarkdown\
@@ -65,7 +65,12 @@ namespace eval ::render {
         
         array set link_split [gemini::splitLink $line]
         lappend link_list $link_split(url)
-        $viewport insert end [string cat $link_split(text) "\n"] link
+        if {$link_split(text) eq ""} {
+            set render_text $link_split(url)
+        } else {
+            set render_text $link_split(text)
+        }
+        $viewport insert end [string cat $render_text "\n"] link
     }
 
     proc renderText {line viewport context} {
@@ -96,11 +101,13 @@ namespace eval ::render {
 
     proc linkhandler {xpos ypos} {
         variable viewport
+        variable curr_url
+        variable urlhandler
 
         set textpos [$viewport index "@$xpos,$ypos"]
-        puts "Text Position: $textpos"
         set link [textpostolink $textpos]
-        puts "Link: $link"
+        set resolved_link [gemini::resolve $curr_url $link]
+        eval $urlhandler [list $resolved_link]
     }
 
     proc textpostolink {textpos} {
@@ -115,6 +122,19 @@ namespace eval ::render {
                 return [lindex $link_list $linkcnt]
             }
         }
+    }
+
+    # TODO: Remove after migrated to object constructor
+    proc seturl {url} {
+        variable curr_url
+
+        set curr_url $url
+    }
+
+    proc seturlhandler {handler} {
+        variable urlhandler
+
+        set urlhandler $handler
     }
 
     # TODO: Ugly hack to deal with single namespace

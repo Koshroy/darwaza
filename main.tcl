@@ -3,9 +3,10 @@ package require lambda
 
 source "gemini.tcl"
 source "render.tcl"
+source "browserlocs.tcl"
 
 # History list
-set loc_hist [list]
+set loc_hist $browserlocs
 
 set browser_title "Darwaza"
 set start_page "gemini://acidic.website"
@@ -22,7 +23,7 @@ pack $viewport_frame
 pack $status_bar_frame
 
 
-set back_btn [ttk::button .r1.back -text ◀ -width 3]
+set back_btn [ttk::button .r1.back -text ◀ -width 3 -command browserback]
 set fwd_btn [ttk::button .r1.forward -text ▶ -width 3]
 set address_bar [ttk::entry .r1.address -textvariable browser_url]
 set go_btn [ttk::button .r1.go -text "Go!" -command change_url]
@@ -30,7 +31,6 @@ set go_btn [ttk::button .r1.go -text "Go!" -command change_url]
 set viewport [text .r2.viewport]
 set statusbar [ttk::label .r3.statusbar -justify right -text\
                    "Welcome to Darwaza!"]
-
  
 $viewport configure \
     -font $regular_font \
@@ -51,6 +51,8 @@ $viewport tag bind link {<Button-1>} {render::linkhandler %x %y}
 proc change_url {args} {
     variable viewport
     variable browser_url
+    variable loc_hist
+    variable hist_ind
 
     if {[llength $args] == 1} {
         # If the list is a singleton, then we can use it as-is
@@ -63,9 +65,16 @@ proc change_url {args} {
     $viewport delete 1.0 [$viewport index end]
     render::cleanlinks
     gemini::fetch $browser_url -linehandler $render::render_proc
-    lappend loc_hist $browser_url
+
+    $loc_hist PutsState
+    $loc_hist Addloc $browser_url
 }
 
+proc browserback {} {
+    variable loc_hist
+
+    $loc_hist Back
+}
 
 # TODO: Refactor into an object constructor
 render::setviewport $viewport

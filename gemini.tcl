@@ -67,9 +67,10 @@ proc ::gemini::fetch {url args} {
     }
 
     set has_linehandler [info exists linehandler]
-    array set url_split [uri::split $url]
+    set trim_url [string trim $url]
+    array set url_split [uri::split $trim_url]
     set sock [tls::socket $url_split(host) $url_split(port)]
-    puts -nonewline $sock [string cat $url "\r\n"]
+    puts -nonewline $sock [string cat $trim_url "\r\n"]
     flush $sock
 
     gets $sock header ;# Grab the header line from the socket

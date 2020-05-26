@@ -1,51 +1,52 @@
-oo::object create browserlocs
-oo::objdefine browserlocs {
-    variable ind
-    variable locations
+oo::class create browserlocs {
+    variable InsertPtr
+    variable Locations
 
-    set ind -1
-    set locations {}
-
-    # Chop history to end at index $at (includes $at)
-    method chophist {at} {
-        if {at < 0} {
-            set endloc 0 
-        } else {
-            set endloc $at
-        }
-        return [lrange $locations 0 $endloc]
+    constructor {} {
+        set InsertPtr 0
+        set Locations {}
     }
 
-    method Addloc {loc} {
+    # Chop history to end at InsertPtrex $at (includes $at)
+    method Chophist {at} {
+        # if {$at < 0} {
+        #     set endloc 0 
+        # } else {
+        #     set endloc $at
+        # }
+        return [lrange $Locations 0 $at]
+    }
+
+    method addloc {loc} {
         # No need to chop history if we are at the end of
         # the history list
-        if {$ind == [expr [llength $locations] - 1]} {
-            set choppedlocs $locations
+        if {$InsertPtr == [llength $Locations]} {
+            set choppedlocs $Locations
         } else {
-            set choppedlocs [my chophist $ind]
+            set choppedlocs [my Chophist [expr $InsertPtr - 1]]
         }
-        
-        incr ind
-        set locations [lappend $choppedlocs $loc]
+        incr InsertPtr
+        lappend choppedlocs $loc
+        set Locations $choppedlocs
     }
 
-    method Current {} {
-        return [lindex $locations $ind]
+    method current {} {
+        return [lindex $Locations [expr $InsertPtr - 1]]
     }
 
-    method Back {} {
-        if {$ind != 0} {
-            set ind [expr $ind - 1]
-        }
-    }
-
-    method Forward {} {
-        if {$ind < [llength $locations]} {
-            incr ind
+    method back {} {
+        if {$InsertPtr != 0} {
+            set InsertPtr [expr $InsertPtr - 1]
         }
     }
 
-    method PutsState {} {
-        puts "Ind: $ind | Locations: $locations"
+    method forward {} {
+        if {$InsertPtr < [llength $Locations]} {
+            incr InsertPtr
+        }
+    }
+
+    method putsState {} {
+        puts "InsertPtr: $InsertPtr | Locations: $Locations"
     }
 }

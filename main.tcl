@@ -6,7 +6,7 @@ source "render.tcl"
 source "browserlocs.tcl"
 
 # History list
-set loc_hist $browserlocs
+set locs [browserlocs new]
 
 set browser_title "Darwaza"
 set start_page "gemini://acidic.website"
@@ -14,6 +14,7 @@ set browser_url $start_page
 set viewport_contents ""
 
 wm title . "Darwaza"
+wm iconphoto . [image create photo -file "./icon.png"]
 
 set address_bar_frame [ttk::frame .r1]
 set viewport_frame [ttk::frame .r2]
@@ -23,9 +24,12 @@ pack $viewport_frame
 pack $status_bar_frame
 
 
-set back_btn [ttk::button .r1.back -text ◀ -width 3 -command browserback]
-set fwd_btn [ttk::button .r1.forward -text ▶ -width 3]
+set back_btn [ttk::button .r1.back -text ◀ -width 3\
+                  -command {browsermove back}]
+set fwd_btn [ttk::button .r1.forward -text ▶ -width 3\
+                 -command {browsermove forward}]
 set address_bar [ttk::entry .r1.address -textvariable browser_url]
+bind $address_bar {<Return>} change_url
 set go_btn [ttk::button .r1.go -text "Go!" -command change_url]
 
 set viewport [text .r2.viewport]
@@ -48,33 +52,50 @@ $viewport tag configure link -font $link_font -foreground "#3333cc"
 $viewport tag bind link {<Button-1>} {render::linkhandler %x %y}
 
 
-proc change_url {args} {
+proc goto_url {url} {
     variable viewport
     variable browser_url
-    variable loc_hist
+    variable locs
     variable hist_ind
 
-    if {[llength $args] == 1} {
-        # If the list is a singleton, then we can use it as-is
-        set browser_url $args
-
-        # TODO: Remove hack when moving to Tcl object
-        render::seturl $args
-    }
+    set browser_url $url
+    render::seturl $browser_url
 
     $viewport delete 1.0 [$viewport index end]
     render::cleanlinks
     gemini::fetch $browser_url -linehandler $render::render_proc
 
-    $loc_hist PutsState
-    $loc_hist Addloc $browser_url
 }
 
-proc browserback {} {
-    variable loc_hist
+proc change_url {args} {
+    variable viewport
+    variable locs
+    variable hist_ind
+    variable browser_url
 
-    $loc_hist Back
+    if {[llength $args] == 1} {
+        # If the list is a singleton, then we can use it as-is
+        set next_url $args
+    } else {
+        set next_url $browser_url
+    }
+
+    goto_url $next_url
+
+    puts "Change URL"
+    $locs addloc $browser_url
+    $locs putsState
 }
+
+
+proc browsermove {dir} {
+    variable locs
+
+    $locs $dir
+    set curr_url [$locs current]
+    goto_url $curr_url
+}
+
 
 # TODO: Refactor into an object constructor
 render::setviewport $viewport
@@ -93,6 +114,8 @@ pack $statusbar -fill x
 pack $viewport -side left -fill both -expand 1
 
 focus $address_bar
+
+
 
 foreach w [winfo children .r1] {pack configure $w -fill x}
 foreach w [winfo children .r2] {pack configure $w -fill both -expand 1}

@@ -70,14 +70,15 @@ proc ::gemini::fetch {url args} {
     set trim_url [string trim $url]
     array set url_split [uri::split $trim_url]
     set sock [tls::socket $url_split(host) $url_split(port)]
-    puts -nonewline $sock [string cat $trim_url "\r\n"]
+    fconfigure $sock -translation binary -encoding {utf-8}
+    puts -nonewline $sock "$trim_url\x0d\x0a"
     flush $sock
 
     gets $sock header ;# Grab the header line from the socket
     set code [string range $header 0 1]
 
     if {[expr [string index $code 0] eq 5]} {
-        error "Error fetching Resource: $url with code $code"
+        error "Received error fetching $url with code $code: $header"
     }
 
     set body ""
@@ -94,10 +95,11 @@ proc ::gemini::fetch {url args} {
         }
     }
 
+    close $sock
+
     # If we have a linehandler, then there is no need to
     # return a response, so let's clean up and return early
     if $has_linehandler {
-        close $sock
         return
     }
 
@@ -139,7 +141,8 @@ proc ::gemini::stripMarkdown {str} {
 
 proc ::gemini::splitLink {link} {
     set match [regexp {=>\s+(\S+)(\s+\S.*)?} $link full raw_url text]
-    set url [string trimleft $raw_url]
+    set url [string trim $raw_url]
+    set text [string trim $text]
     return [list {url} $url {text} $text]
 }
 

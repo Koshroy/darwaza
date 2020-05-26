@@ -5,11 +5,30 @@ source "gemini.tcl"
 source "render.tcl"
 source "browserlocs.tcl"
 
+set regular_font_family "Georgia"
+set regular_font_size 22
+set regular_font [font create "view_regular"\
+                      -family $regular_font_family\
+                      -size $regular_font_size]
+set mono_font [font create "view_mono" -family "Courier" -size 22]
+
+set h1_font [font create "view_h1" -family $regular_font_family -size 42]
+set h2_font [font create "view_h2" -family $regular_font_family -size 38]
+set h3_font [font create "view_h3" -family $regular_font_family -size 32]
+
+set link_font [font create "view_link"\
+                   -family $regular_font_family\
+                   -size $regular_font_size]
+
+set spacer_font [font create "view_spacer"\
+                     -family $regular_font_family -size 10]
+
 # History list
 set locs [browserlocs new]
 
 set browser_title "Darwaza"
 set start_page "gemini://acidic.website"
+set start_page "gemini://gemini.circumlunar.space/"
 set browser_url $start_page
 set viewport_contents ""
 
@@ -82,9 +101,7 @@ proc change_url {args} {
 
     goto_url $next_url
 
-    puts "Change URL"
     $locs addloc $browser_url
-    $locs putsState
 }
 
 
@@ -101,6 +118,7 @@ proc browsermove {dir} {
 render::setviewport $viewport
 render::seturl $browser_url
 render::seturlhandler [namespace code change_url]
+render::setregularfontsize $regular_font_size
 # End TODO
 
 

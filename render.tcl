@@ -1,23 +1,5 @@
 package require Tk
 
-set regular_font_family "Georgia"
-set regular_font_size 22
-set regular_font [font create "view_regular"\
-                      -family $regular_font_family\
-                      -size $regular_font_size]
-set mono_font [font create "view_mono" -family "Courier" -size 22]
-
-set h1_font [font create "view_h1" -family $regular_font_family -size 42]
-set h2_font [font create "view_h2" -family $regular_font_family -size 38]
-set h3_font [font create "view_h3" -family $regular_font_family -size 32]
-
-set link_font [font create "view_link"\
-                   -family $regular_font_family\
-                   -size $regular_font_size]
-
-set spacer_font [font create "view_spacer"\
-                     -family $regular_font_family -size 10]
-
 namespace eval ::render {
     # Context object passed into callbacks
     variable context
@@ -39,7 +21,9 @@ namespace eval ::render {
     # curried render function, but for now, this is the simplest
     # way to go.
     variable viewport link_table curr_url urlhandler
+    variable regularfontsize
     set link_list {} ;# Empty list
+    array set context {} ;# Empty array
 
     namespace export render_proc setviewport render_line_proc
     namespace export render_line
@@ -49,15 +33,17 @@ namespace eval ::render {
         [list markdown renderMarkdown\
              text renderText\
              link renderLink\
-             raw renderText ]
+             raw renderRaw ]
 
     proc renderMarkdown {line viewport context} {
+        variable regularfontsize
+
         set post [gemini::stripMarkdown $line]
         $viewport insert end\
             [string cat [gemini::stripMarkdown $line] "\n"]\
             [list \
                  [gemini::headerlevel $line]\
-                 -spacing3 $::regular_font_size]
+                 -spacing3 $regularfontsize]
     }
 
     proc renderLink {line viewport context} {
@@ -70,26 +56,40 @@ namespace eval ::render {
         } else {
             set render_text $link_split(text)
         }
-        $viewport insert end [string cat $render_text "\n"] link
+        $viewport insert end [string cat $render_text] link
+
+        # So that the text widget does not think that a list of
+        # links is a single link, we need to make sure newlines
+        # are rendered without tags
+        $viewport insert end "\n"
     }
 
     proc renderText {line viewport context} {
         $viewport insert end [string cat $line "\n"]
     }
 
+    proc renderRaw {line viewport context} {
+        # TODO: Render raw text in monospace
+        if {$line != "```"} {
+            renderText $line $viewport $context
+        }
+    }
+
     proc render_line {linetype line viewport context} {
         variable render_linetype_funcs
 
-        $render_linetype_funcs($linetype) $line $viewport $context
+        $render_linetype_funcs($linetype) $line $viewport context
     }
 
     set render_line_proc [namespace code render_line]
     proc render {line} {
         variable render_line_proc
         variable link_list
+        variable viewport
 
+        # TODO: Remove reference to ::context
         eval $render_line_proc \
-            [gemini::linetype $line] [list $line] $::viewport ::context
+            [gemini::linetype $line] [list $line] $viewport context
     }
 
     set render_proc [namespace code render]
@@ -143,5 +143,12 @@ namespace eval ::render {
         variable link_list
 
         set link_list {}
+    }
+
+    # TODO: Ugly hack to deal with single namespace
+    # this needs to be refactored into an object
+    proc setregularfontsize {sz} {
+        variable regularfontsize
+        set regularfontsize sz
     }
 }

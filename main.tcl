@@ -29,7 +29,6 @@ set spacer_font [font create "view_spacer"\
 set locs [browserlocs new]
 
 set browser_title "Darwaza"
-set start_page "gemini://acidic.website"
 set start_page "gemini://gemini.circumlunar.space/"
 set browser_url $start_page
 set viewport_contents ""

@@ -32,6 +32,7 @@ set browser_title "Darwaza"
 set start_page "gemini://gemini.circumlunar.space/"
 set browser_url $start_page
 set viewport_contents ""
+set statusbar_contents "Welcome to Darwaza!"
 
 wm title . "Darwaza"
 wm iconphoto . [image create photo -file "./icon.png"]
@@ -53,8 +54,9 @@ bind $address_bar {<Return>} change_url
 set go_btn [ttk::button .r1.go -text "Go!" -command change_url]
 
 set viewport [text .r2.viewport]
-set statusbar [ttk::label .r3.statusbar -justify right -text\
-                   "Welcome to Darwaza!"]
+set statusbar [ttk::label .r3.statusbar\
+                   -justify right\
+                   -textvariable statusbar_contents]
  
 $viewport configure \
     -font $regular_font \
@@ -72,20 +74,28 @@ $viewport tag configure h3 -font $h3_font -foreground "#d14432"
 $viewport tag configure link -font $link_font -foreground "#3e52cc"
 $viewport tag bind link {<Button-1>} {render::linkhandler %x %y}
 
-
 proc goto_url {url} {
     variable viewport
     variable browser_url
     variable locs
     variable hist_ind
+    variable statusbar_contents
 
     set browser_url $url
     render::seturl $browser_url
 
     $viewport delete 1.0 [$viewport index end]
     render::cleanlinks
-    gemini::fetch $browser_url -linehandler $render::render_proc
+    set fetch [catch\
+                   {gemini::fetch $browser_url\
+                        -linehandler $render::render_proc}\
+                   ErrFetch]
 
+    if {$fetch == 1} {
+        set statusbar_contents "Error fetching $url: $ErrFetch"
+    } else {
+        set statusbar_contents "Success fetching $url"
+    }
 }
 
 proc change_url {args} {

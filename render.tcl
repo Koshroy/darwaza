@@ -38,12 +38,9 @@ namespace eval ::render {
     proc renderMarkdown {line viewport context} {
         variable regularfontsize
 
-        set post [gemini::stripMarkdown $line]
         $viewport insert end\
             [string cat [gemini::stripMarkdown $line] "\n"]\
-            [list \
-                 [gemini::headerlevel $line]\
-                 -spacing3 $regularfontsize]
+            [list [gemini::headerlevel $line] -spacing3 $regularfontsize]
     }
 
     proc renderLink {line viewport context} {
@@ -65,13 +62,17 @@ namespace eval ::render {
     }
 
     proc renderText {line viewport context} {
+        if {[string index $line 0] eq "*"} {
+            set line [string replace $line 0 1 "• "]
+        }
+
         $viewport insert end [string cat $line "\n"]
     }
 
     proc renderRaw {line viewport context} {
         # TODO: Render raw text in monospace
         if {$line != "```"} {
-            renderText $line $viewport $context
+            $viewport insert end [string cat $line "\n"]
         }
     }
 

@@ -115,7 +115,7 @@ proc ::gemini::linetype {line} {
         return markdown
     } elseif {[regexp "^=>\s*" $line]} {
         return link
-    } elseif {[regexp "^```" $line]} {
+    } elseif {[regexp "^```.*" $line]} {
         return raw
     } else {
         return text

@@ -1,3 +1,5 @@
+#!/usr/bin/env wish
+
 package require Tk
 package require lambda
 
@@ -60,14 +62,15 @@ $viewport configure \
     -bg "#fff8dc"\
     -foreground black\
     -padx 20 -pady 20\
-    -insertontime 0
+    -insertontime 0\
+    -wrap word
 
 
-$viewport tag configure h1 -font $h1_font
-$viewport tag configure h2 -font $h2_font
-$viewport tag configure h3 -font $h3_font
+$viewport tag configure h1 -font $h1_font -foreground "#d14432"
+$viewport tag configure h2 -font $h2_font -foreground "#d14432"
+$viewport tag configure h3 -font $h3_font -foreground "#d14432"
 
-$viewport tag configure link -font $link_font -foreground "#3333cc"
+$viewport tag configure link -font $link_font -foreground "#3e52cc"
 $viewport tag bind link {<Button-1>} {render::linkhandler %x %y}
 
 

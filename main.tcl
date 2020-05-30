@@ -83,7 +83,7 @@ $viewport tag bind link {<Leave>} {
     $viewport configure -cursor arrow
 }
 
-$viewport -yscrollcommand {$viewscroll set}
+$viewport configure -yscrollcommand {$viewscroll set}
 $viewscroll configure -command {$viewport xview}
 
 

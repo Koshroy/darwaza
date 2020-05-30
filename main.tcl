@@ -54,6 +54,7 @@ bind $address_bar {<Return>} change_url
 set go_btn [ttk::button .r1.go -text "Go!" -command change_url]
 
 set viewport [text .r2.viewport]
+set viewscroll [scrollbar .r2.scrollbar]
 set statusbar [ttk::label .r3.statusbar\
                    -justify right\
                    -textvariable statusbar_contents]
@@ -66,13 +67,29 @@ $viewport configure \
     -insertontime 0\
     -wrap word
 
-
 $viewport tag configure h1 -font $h1_font -foreground "#d14432"
 $viewport tag configure h2 -font $h2_font -foreground "#d14432"
 $viewport tag configure h3 -font $h3_font -foreground "#d14432"
 
-$viewport tag configure link -font $link_font -foreground "#3e52cc"
+$viewport tag configure link\
+    -font $link_font\
+    -foreground "#3e52cc"\
+
 $viewport tag bind link {<Button-1>} {render::linkhandler %x %y}
+$viewport tag bind link {<Enter>} {
+    $viewport configure -cursor hand1
+}
+$viewport tag bind link {<Leave>} {
+    $viewport configure -cursor arrow
+}
+
+$viewport -yscrollcommand {$viewscroll set}
+$viewscroll configure -command {$viewport xview}
+
+
+# Disable all keypresses in the text viewport from inserting
+# text, effectively making this a read-only widget
+bind $viewport <KeyPress> break
 
 proc goto_url {url} {
     variable viewport
@@ -86,6 +103,8 @@ proc goto_url {url} {
 
     $viewport delete 1.0 [$viewport index end]
     render::cleanlinks
+
+    set statusbar_contents "Fetching $url"
     set fetch [catch\
                    {gemini::fetch $browser_url\
                         -linehandler $render::render_proc}\
@@ -142,6 +161,7 @@ pack $address_bar -side left -fill both -expand true -padx 3 -pady 3
 pack $go_btn -side left -fill both -expand true -padx 3 -pady 3
 pack $statusbar -fill x
 pack $viewport -side left -fill both -expand 1
+pack $viewscroll -side right
 
 focus $address_bar
 

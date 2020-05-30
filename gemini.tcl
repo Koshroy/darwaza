@@ -118,6 +118,9 @@ proc ::gemini::FetchUrl {url linehandler} {
     # At this point in time, only successful requests reads the body
     set readbody [expr {$resp_type eq "success"}]
 
+    # Initialize the body to an empty string
+    set body ""
+
     # Throw appropriate errors for response errors received
     # These errors are unrecoverable errors
     switch $resp_type {
@@ -136,9 +139,6 @@ proc ::gemini::FetchUrl {url linehandler} {
             error "Received certificate error fetching $url: $header"
         }
     }
-
-    # Initialize the body to an empty string
-    set body ""
 
     # Do not read the body if the flag was set as such
     while {$readbody && [gets $sock line] >= 0} {
